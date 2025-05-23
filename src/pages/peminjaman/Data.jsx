@@ -6,6 +6,8 @@ import Modal from "../../components/Modal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import dayjs from "dayjs";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, LabelList,
@@ -158,6 +160,40 @@ export default function DataPeminjaman() {
     saveAs(file, "data_peminjaman_buku.xlsx");
   }
 
+  // Fungsi export PDF detail peminjaman member
+  function exportDetailToPDF() {
+    if (!detailMember) return;
+
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text(`Riwayat Peminjaman Member: ${detailMember.id_member}`, 14, 22);
+
+    const filteredData = lending.filter(item => item.id_member === detailMember.id_member);
+
+    const tableColumn = ["#", "ID Buku", "Tgl Pinjam", "Tgl Kembali", "Status"];
+    const tableRows = [];
+
+    filteredData.forEach((item, index) => {
+      const rowData = [
+        index + 1,
+        item.id_buku,
+        item.tgl_pinjam,
+        item.tgl_pengembalian,
+        item.status_pengembalian ? "Sudah Dikembalikan" : "Belum",
+      ];
+      tableRows.push(rowData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+    });
+
+    doc.save(`riwayat_peminjaman_${detailMember.id_member}.pdf`);
+  }
+
+
   const GradientBarChart = ({ data }) => (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
@@ -241,77 +277,114 @@ export default function DataPeminjaman() {
       </table>
 
       {/* Modal Konfirmasi Denda */}
-      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Konfirmasi Denda">
-        <p>Apakah Peminjaman <b>{selectedLending?.id_buku}</b> perlu di denda?</p>
-        <button className="btn btn-danger me-2" onClick={handleFineConfirmation}>Ya, Tambah Denda</button>
-        <button className="btn btn-secondary" onClick={handleSkipFine}>Tidak Perlu</button>
+      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Apakah ingin menambahkan denda?">
+        <button className="btn btn-danger me-3" onClick={handleFineConfirmation}>Ya</button>
+        <button className="btn btn-outline-secondary" onClick={handleSkipFine}>Tidak</button>
       </Modal>
 
       {/* Modal Form Denda */}
-      <Modal isOpen={showFineModal} onClose={() => setShowFineModal(false)} title="Input Denda">
+      <Modal isOpen={showFineModal} onClose={() => setShowFineModal(false)} title="Tambah Denda">
         <form onSubmit={handleFineSubmit}>
-          <div className="form-group">
-            <label>ID Member</label>
-            <input type="text" className="form-control" value={fineForm.id_member} disabled />
+          <div className="mb-3">
+            <label className="form-label">ID Member</label>
+            <input
+              type="text"
+              className="form-control"
+              value={fineForm.id_member}
+              readOnly
+            />
           </div>
-          <div className="form-group mt-2">
-            <label>ID Buku</label>
-            <input type="text" className="form-control" value={fineForm.id_buku} disabled />
+          <div className="mb-3">
+            <label className="form-label">ID Buku</label>
+            <input
+              type="text"
+              className="form-control"
+              value={fineForm.id_buku}
+              readOnly
+            />
           </div>
-          <div className="form-group mt-2">
-            <label>Jumlah Denda</label>
-            <input type="number" className="form-control" required onChange={(e) => setFineForm({ ...fineForm, jumlah_denda: e.target.value })} />
+          <div className="mb-3">
+            <label className="form-label">Jumlah Denda</label>
+            <input
+              type="number"
+              className="form-control"
+              name="jumlah_denda"
+              value={fineForm.jumlah_denda}
+              onChange={e => setFineForm({ ...fineForm, jumlah_denda: e.target.value })}
+              required
+              min={0}
+            />
           </div>
-          <div className="form-group mt-2">
-            <label>Jenis Denda</label>
-            <select className="form-control" required onChange={(e) => setFineForm({ ...fineForm, jenis_denda: e.target.value })}>
-              <option value="">-- Pilih Jenis --</option>
+          <div className="mb-3">
+            <label className="form-label">Jenis Denda</label>
+            <select
+              className="form-select"
+              name="jenis_denda"
+              value={fineForm.jenis_denda}
+              onChange={e => setFineForm({ ...fineForm, jenis_denda: e.target.value })}
+              required
+            >
+              <option value="">Pilih jenis denda</option>
               <option value="terlambat">Terlambat</option>
               <option value="kerusakan">Kerusakan</option>
               <option value="lainnya">Lainnya</option>
             </select>
           </div>
-          <div className="form-group mt-2">
-            <label>Deskripsi</label>
-            <textarea className="form-control" required onChange={(e) => setFineForm({ ...fineForm, deskripsi: e.target.value })}></textarea>
+          <div className="mb-3">
+            <label className="form-label">Deskripsi</label>
+            <textarea
+              className="form-control"
+              name="deskripsi"
+              value={fineForm.deskripsi}
+              onChange={e => setFineForm({ ...fineForm, deskripsi: e.target.value })}
+              rows={3}
+              required
+            ></textarea>
           </div>
-          <button type="submit" className="btn btn-primary mt-3">Simpan Denda</button>
+          <button className="btn btn-primary" type="submit">Simpan Denda</button>
         </form>
       </Modal>
 
       {/* Modal Detail Peminjaman */}
-      <Modal isOpen={isModalDetailOpen} onClose={() => setIsModalDetailOpen(false)} title={`Riwayat Peminjaman Member : ${detailMember?.id_member}`}>
+      <Modal
+        isOpen={isModalDetailOpen}
+        onClose={() => setIsModalDetailOpen(false)}
+        title={`Riwayat Peminjaman Member : ${detailMember?.id_member}`}
+      >
         {detailMember && (
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>ID Buku</th>
-                <th>Tgl Pinjam</th>
-                <th>Tgl Kembali</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lending
-                .filter(item => item.id_member === detailMember.id_member)
-                .map((item, idx) => (
-                  <tr key={item.id}>
-                    <td>{idx + 1}</td>
-                    <td>{item.id_buku}</td>
-                    <td>{item.tgl_pinjam}</td>
-                    <td>{item.tgl_pengembalian}</td>
-                    <td>
-                      {item.status_pengembalian ? (
-                        <span className="badge bg-success">Sudah Dikembalikan</span>
-                      ) : (
-                        <span className="badge bg-warning text-dark">Belum</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <>
+            <button className="btn btn-danger mb-3" onClick={exportDetailToPDF}>Export PDF</button>
+            <table className="table table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>ID Buku</th>
+                  <th>Tgl Pinjam</th>
+                  <th>Tgl Kembali</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lending
+                  .filter(item => item.id_member === detailMember.id_member)
+                  .map((item, idx) => (
+                    <tr key={item.id}>
+                      <td>{idx + 1}</td>
+                      <td>{item.id_buku}</td>
+                      <td>{item.tgl_pinjam}</td>
+                      <td>{item.tgl_pengembalian}</td>
+                      <td>
+                        {item.status_pengembalian ? (
+                          <span className="badge bg-success">Sudah Dikembalikan</span>
+                        ) : (
+                          <span className="badge bg-warning text-dark">Belum</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </>
         )}
       </Modal>
     </>
