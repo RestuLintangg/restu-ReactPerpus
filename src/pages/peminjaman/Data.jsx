@@ -24,6 +24,9 @@ export default function DataPeminjaman() {
 
   const [completedReturns, setCompletedReturns] = useState([]);
 
+  const [isModalDetailOpen, setIsModalDetailOpen] = useState(false);
+  const [detailMember, setDetailMember] = useState(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -129,6 +132,11 @@ export default function DataPeminjaman() {
       });
   }
 
+  function handleDetailPeminjaman(peminjaman) {
+    setDetailMember(peminjaman);
+    setIsModalDetailOpen(true);
+  }
+
   function exportExcelPeminjaman() {
     const formattedData = lending.map((item, index) => ({
       No: index + 1,
@@ -150,7 +158,6 @@ export default function DataPeminjaman() {
     saveAs(file, "data_peminjaman_buku.xlsx");
   }
 
-  // Komponen chart dengan gradient dan animasi
   const GradientBarChart = ({ data }) => (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
@@ -186,7 +193,6 @@ export default function DataPeminjaman() {
     <>
       {alert && <div className="alert alert-success mt-3">{alert}</div>}
 
-      {/* Grafik Bar */}
       <div className="container mt-5">
         <h4>Grafik Peminjaman per Bulan</h4>
         <GradientBarChart data={chartData} />
@@ -195,42 +201,44 @@ export default function DataPeminjaman() {
       <div className="d-flex justify-content-end align-items-center mt-3">
         <button className="btn btn-warning me-3" onClick={exportExcelPeminjaman}>Export Excel</button>
       </div>
-      <table className="table table-bordered m-3">
-  <thead className="table-primary">
-    <tr className="fw-bold">
-      <th>#</th>
-      <th>ID Buku</th>
-      <th>ID Member</th>
-      <th>TANGGAL PINJAM</th>
-      <th>TANGGAL PENGEMBALIAN</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {lending.map((value, index) => (
-      <tr key={value.id}>
-        <td>{index + 1}</td>
-        <td>{value.id_buku}</td>
-        <td>{value.id_member}</td>
-        <td>{value.tgl_pinjam}</td>
-        <td>{value.tgl_pengembalian}</td>
-        <td className="w-25">
-  {value.status_pengembalian ? (
-    completedReturns.includes(value.id) ? (
-      <button className="btn btn-info me-2" disabled>Selesai</button>
-    ) : (
-      <button className="btn btn-primary me-2" onClick={() => handleShowFineConfirmation(value)}>Perlu Denda?</button>
-    )
-  ) : (
-    <button className="btn btn-outline-primary me-2" onClick={() => handlePengembalian(value.id)}>Kembalikan</button>
-  )}
-</td>
 
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+      <table className="table table-bordered text-center m-3">
+        <thead className="table-primary">
+          <tr className="fw-bold">
+            <th>#</th>
+            <th>ID Buku</th>
+            <th>ID Member</th>
+            <th>TANGGAL PINJAM</th>
+            <th>TANGGAL PENGEMBALIAN</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {lending.map((value, index) => (
+            <tr key={value.id}>
+              <td>{index + 1}</td>
+              <td>{value.id_buku}</td>
+              <td>{value.id_member}</td>
+              <td>{value.tgl_pinjam}</td>
+              <td>{value.tgl_pengembalian}</td>
+              <td style={{ minWidth: "220px" }}>
+                <div className="d-flex justify-content-center">
+                  {value.status_pengembalian ? (
+                    completedReturns.includes(value.id) ? (
+                      <button className="btn btn-info btn-sm" disabled>Selesai</button>
+                    ) : (
+                      <button className="btn btn-primary btn-sm" onClick={() => handleShowFineConfirmation(value)}>Perlu Denda?</button>
+                    )
+                  ) : (
+                    <button className="btn btn-outline-primary btn-sm" onClick={() => handlePengembalian(value.id)}>Kembalikan</button>
+                  )}
+                  <button className="btn btn-secondary btn-sm ms-2" onClick={() => handleDetailPeminjaman(value)}>Detail</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {/* Modal Konfirmasi Denda */}
       <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Konfirmasi Denda">
@@ -269,6 +277,42 @@ export default function DataPeminjaman() {
           </div>
           <button type="submit" className="btn btn-primary mt-3">Simpan Denda</button>
         </form>
+      </Modal>
+
+      {/* Modal Detail Peminjaman */}
+      <Modal isOpen={isModalDetailOpen} onClose={() => setIsModalDetailOpen(false)} title={`Riwayat Peminjaman Member : ${detailMember?.id_member}`}>
+        {detailMember && (
+          <table className="table table-bordered">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ID Buku</th>
+                <th>Tgl Pinjam</th>
+                <th>Tgl Kembali</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lending
+                .filter(item => item.id_member === detailMember.id_member)
+                .map((item, idx) => (
+                  <tr key={item.id}>
+                    <td>{idx + 1}</td>
+                    <td>{item.id_buku}</td>
+                    <td>{item.tgl_pinjam}</td>
+                    <td>{item.tgl_pengembalian}</td>
+                    <td>
+                      {item.status_pengembalian ? (
+                        <span className="badge bg-success">Sudah Dikembalikan</span>
+                      ) : (
+                        <span className="badge bg-warning text-dark">Belum</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        )}
       </Modal>
     </>
   );

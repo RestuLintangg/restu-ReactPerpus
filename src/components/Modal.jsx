@@ -9,28 +9,34 @@ export default function Modal({ isOpen, onClose, title, children }) {
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 58, 122, 0.4); /* sedikit gelap dan biru */
+          background: rgba(0, 58, 122, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1050;
-          backdrop-filter: blur(4px); /* blur background */
+          backdrop-filter: blur(4px);
           animation: fadeInOverlay 0.3s ease forwards;
         }
+
         @keyframes fadeInOverlay {
-          from {opacity: 0;}
-          to {opacity: 1;}
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
+
         .modal-container {
-          background: #f0f9ff; /* biru sangat muda */
+          background: #f0f9ff;
           border-radius: 20px;
           box-shadow: 0 12px 28px rgba(0, 99, 200, 0.25);
-          max-width: 480px;
-          width: 95%;
-          animation: fadeInScale 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-          border: 1.5px solid #74a9ff; /* border tipis biru */
+          width: fit-content;
+          max-width: 90vw;
+          max-height: 90vh;
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          border: 1.5px solid #74a9ff;
+          animation: fadeInScale 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
+
         @keyframes fadeInScale {
           from {
             opacity: 0;
@@ -41,6 +47,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
             transform: scale(1);
           }
         }
+
         .modal-header {
           padding: 1rem 1.25rem;
           background: #74a9ff;
@@ -54,6 +61,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
           border-top-right-radius: 20px;
           box-shadow: inset 0 -2px 4px rgb(0 0 0 / 0.1);
         }
+
         .close-btn {
           background: transparent;
           border: none;
@@ -64,14 +72,18 @@ export default function Modal({ isOpen, onClose, title, children }) {
           line-height: 1;
           transition: transform 0.2s ease, color 0.2s ease;
         }
+
         .close-btn:hover {
           color: #cce4ff;
           transform: rotate(90deg);
         }
+
         .modal-body {
-          padding: 1.5rem 1.5rem;
+          padding: 1.5rem;
           color: #1a3e72;
           font-size: 1rem;
+          overflow-y: auto;
+          flex: 1 1 auto;
         }
       `}</style>
 
@@ -81,7 +93,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="modal-header">
             <h5 id="modal-title">{title}</h5>

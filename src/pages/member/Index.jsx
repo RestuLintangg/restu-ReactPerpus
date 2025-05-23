@@ -119,18 +119,6 @@ export default function Member() {
     setIsModalDetailOpen(true);
   }
 
-  const renderErrors = () => {
-    if (!error.data && !error.message) return null;
-
-    if (error.data) {
-      return Object.entries(error.data).map(([key, val]) => (
-        <small key={key} className="text-danger d-block mb-1">{val}</small>
-      ));
-    }
-
-    return <small className="text-danger d-block mb-2">{error.message}</small>;
-  };
-
   return (
     <>
       {alert && (
@@ -216,7 +204,6 @@ export default function Member() {
       {/* Add Member Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Member" size="md">
         <form onSubmit={handleSubmitModal}>
-          {renderErrors()}
           <div className="mb-3">
             <label className="form-label">No. KTP <span className="text-danger">*</span></label>
             <input
@@ -260,7 +247,6 @@ export default function Member() {
       {/* Edit Member Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Member" size="md">
         <form onSubmit={handleEditSubmit}>
-          {renderErrors()}
           <div className="mb-3">
             <label className="form-label">No. KTP <span className="text-danger">*</span></label>
             <input
